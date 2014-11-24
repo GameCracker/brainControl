@@ -19,8 +19,8 @@ class DataTransfer(object):
 		self.file_name = filename
 		self.local_path = "/Users/ziqipeng/Dropbox/bci/system_zero/data/motor_imagery"
 		self.local_data = self.local_path + filename
-		self.aws_access_key_id = 'AKIAJJKTKOW5WNAO3CCA'
-		self.aws_secret_access_key = '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'
+		self.aws_access_key_id = ''
+		self.aws_secret_access_key = ''
 		self.bucket_name = self.aws_access_key_id.lower() + '-eegdata'
 		self.exist_bucket = 'kellystorage0'
 		self.filename = "/Users/ziqipeng/Dropbox/bci/system_zero/data/motor_imagery/motor_imagery_1.csv"
