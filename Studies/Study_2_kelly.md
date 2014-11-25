@@ -7,6 +7,7 @@ Legend:
 0 - Neutral
 -1 - Dislike
 
+
 video 15:  1  https://www.youtube.com/watch?v=7PCkvCPvDXk
 video 16: -1  https://www.youtube.com/watch?v=WqqfMaxU0f8
 video 17:  1  https://www.youtube.com/watch?v=SxAj2lyX4oU
