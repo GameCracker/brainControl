@@ -12,7 +12,7 @@ from sklearn import svm
 from mpl_toolkits.mplot3d import proj3d
 
 
-sys.path.insert(0, '/Users/ziqipeng/Dropbox/bci/startupweekend/backend/emotiv')
+sys.path.insert(0, '/Users/ziqipeng/Dropbox/bci/x/backend/emotiv')
 # print "################# %s" % os.path.dirname(os.path.realpath(__file__))
 # sys.path.append('../backend/emotiv')
 import data_loader_emotiv as dle
@@ -55,15 +55,12 @@ class LikeRecog(object):
 		self.feature_dict = dict(zip(self.feature_list, self.feature_idx))
 		# self.feature_idx = 
 
-	def predict(self):
-		# self.pre_data = dle.DataLoaderEmotiv()
-		# self.pre_data_dic = self.pre_data
-		pass
-
 	def split_secwid_train(self):
 		print "Load video based EEG data and feature selection..."
 		self.all_tags = []
+		self.tags_flat = []
 		self.all_features = []
+		self.all_features_flat = []
 		for k, v in self.data_dic.iteritems():
 			one_video_data = []
 			one_video_ch = []
@@ -96,14 +93,24 @@ class LikeRecog(object):
 				if np.shape(wid_sec)[1] == 128:
 					# print "hiiiiiiiiiiii"
 					# norm_sec_dict = self.normalize_train(wid_sec, one_video_ch, video_terms)
+					# print "{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{"
+					# print np.shape(wid_sec)
+					# # print wid_sec
+					# print "{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{"
+					# print one_video_ch
+					# print "]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]"
 					sec_psd_dic = self.feature_psd(wid_sec, one_video_ch)
+					# print sec_psd_dic.keys()
 					sec_psd_list = []
 					# print "&&&&&&&&&&&&&&&&&&&&&&&"
 					# print sec_psd_dic.keys()
 					# print len(sec_psd_dic.keys())
 					# print "&&&&&&&&&&&&&&&&&&&&&&&"
 					new_sec_dic = {}
+					track_key = []
+					# THOSE KEYS IN SEC_PSD_DIC ARE INTEGER, the order is right
 					for k, v in sec_psd_dic.iteritems():
+						track_key.append(k)
 						new_k = self.feature_dict[k]
 						new_sec_dic[new_k] = v
 					key_list = new_sec_dic.keys()
@@ -111,16 +118,124 @@ class LikeRecog(object):
 					# if count == 0:
 					for key in key_list:
 						# all_features.append(new_sec_dic[key])
-						sec_psd_list.append(new_sec_dic[key])
+						# print "!!!!!!!!!!!!!!!!!!!!!"
+						# print type(new_sec_dic[key])
+						# print np.shape(new_sec_dic[key])
+						sec_psd_list.append((new_sec_dic[key]).tolist())
+					sec_flat = (np.array(sec_psd_list)).flatten()
 					print "***********************************"
-					print np.shape(sec_psd_list)
+					# print key_list
+					# print track_key
+					print np.shape(sec_flat)
+					# print sec_psd_list
 					print "***********************************"
 					self.all_features.extend(sec_psd_list)
+					self.all_features_flat.append(sec_flat)
+					# print "++++++++++++++++++++++++++++++++++"
+					# print np.shape(self.all_features)
+					# print self.all_features
 					self.test_data = self.all_features[0]
 					# self.tl = 1
 					self.test_data1 = self.all_features[1]
 					tags = [label]*70
-					self.all_tags.extend(tags)
+					self.all_tags.append(tags)
+					self.tags_flat.append(label)
+					# print np.shape(self.test_data)
+					print "==================================="
+					# dic_ir = iter(sorted(sec_psd_dic.iteritems()))
+					# print "++++++++++++++++++++++++++++++++++"
+					# print len(dic_ir.next())
+					# print dic_ir.next()[0]
+					# print "++++++++++++++++++++++++++++++++++"
+		# self.trim_data = self.data[(128*10):(128*10 + 128*60)]
+
+	def split_secwid_train_pca(self):
+		print "Load video based EEG data and feature selection..."
+		self.all_tags = []
+		self.tags_flat = []
+		self.all_features = []
+		self.all_features_flat = []
+		for k, v in self.data_dic.iteritems():
+			one_video_data = []
+			one_video_ch = []
+			for tag in self.tag_dic:
+				if tag in k:
+					tag_label = self.tag_dic[tag]
+					# labe - like for 1, other for 0
+					if tag_label ==  0:
+						label = 1
+					else:
+						label = 0
+			for ch, data in v.iteritems():
+				one_video_ch.append(ch)
+				one_video_data.append(data)
+				video_terms = int(math.floor(len(data)/64))
+				# print type(data)
+				# print len(data)
+			start = 0
+			# tags = [label]*128
+			# print "video_term: %d" % video_terms
+			for i in range(video_terms):
+				wid_sec = []
+				for one_ch_data in one_video_data: 
+					wid_sec_ch = one_ch_data[start:(start + 128)]
+					wid_sec.append(wid_sec_ch)
+				# print "i = %d" % i
+				start += 64
+				# print np.shape(wid_sec)
+				# print len(tags)
+				if np.shape(wid_sec)[1] == 128:
+					# print "hiiiiiiiiiiii"
+					# norm_sec_dict = self.normalize_train(wid_sec, one_video_ch, video_terms)
+					# print "{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{"
+					# print np.shape(wid_sec)
+					# # print wid_sec
+					# print "{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{"
+					# print one_video_ch
+					# print "]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]"
+					sec_psd_dic = self.feature_psd(wid_sec, one_video_ch)
+					# print sec_psd_dic.keys()
+					sec_psd_list = []
+					# print "&&&&&&&&&&&&&&&&&&&&&&&"
+					# print sec_psd_dic.keys()
+					# print len(sec_psd_dic.keys())
+					# print "&&&&&&&&&&&&&&&&&&&&&&&"
+					new_sec_dic = {}
+					track_key = []
+					# THOSE KEYS IN SEC_PSD_DIC ARE INTEGER, the order is right
+					for k, v in sec_psd_dic.iteritems():
+						track_key.append(k)
+						new_k = self.feature_dict[k]
+						new_sec_dic[new_k] = v
+					key_list = new_sec_dic.keys()
+					key_list.sort()
+					# if count == 0:
+					for key in key_list:
+						# all_features.append(new_sec_dic[key])
+						# print "!!!!!!!!!!!!!!!!!!!!!"
+						# print type(new_sec_dic[key])
+						# print np.shape(new_sec_dic[key])
+						sec_psd_list.append((new_sec_dic[key]).tolist())
+					sec_flat = (np.array(sec_psd_list)).flatten()
+					print "***********************************"
+					# print key_list
+					# print track_key
+					print np.shape(sec_flat)
+					# print sec_psd_list
+					print "***********************************"
+					self.all_features.extend(sec_psd_list)
+					self.all_features_flat.append(sec_flat)
+					# print "++++++++++++++++++++++++++++++++++"
+					# print np.shape(self.all_features)
+					# print self.all_features
+					self.test_data = self.all_features[0]
+					# self.tl = 1
+					self.test_data1 = self.all_features[1]
+					tags = [label]*70
+					self.all_tags.append(tags)
+					self.tags_flat.append(label)
+					# print np.shape(self.test_data)
+					print "==================================="
 					# dic_ir = iter(sorted(sec_psd_dic.iteritems()))
 					# print "++++++++++++++++++++++++++++++++++"
 					# print len(dic_ir.next())
@@ -134,7 +249,7 @@ class LikeRecog(object):
 		clf = self.svm()
 
 	def realtime_window(self):
-		sys.path.insert(0, '/Users/ziqipeng/Dropbox/bci/startupweekend/backend/emotiv')
+		sys.path.insert(0, '/Users/ziqipeng/Dropbox/bci/x/backend/emotiv')
 		self.rt_dic = self.el.realtime_data()
 		for k, v in self.rt_dic.iteritems():
 			pass
@@ -154,26 +269,208 @@ class LikeRecog(object):
 		# print np.shape(self.all_tags)
 		# print np.shape(self.all_features)
 		# print "++++++++++++++++++++++++++++++++++"
-		xs = np.asarray(self.all_features)
-		ys = np.asarray(self.all_tags)
-		clf = svm.NuSVC()
-		clf.fit(xs, ys)
-		print "Done with classifier!"
-		print "Starting predict on test feature 0: "
-		result = clf.predict(self.test_data)
-		print result
-		if result == 0:
-			print "predicted as dislike!"
+		print np.shape(self.all_features_flat)
+		xs = np.asarray(self.all_features_flat)
+		ys = np.asarray(self.tags_flat)
+		self.clf = svm.NuSVC()
+		self.clf.fit(xs, ys)
+		print "Done with classifier\nPredict..."
+		self.rt_test2()
+		# print "Starting predict on test feature 0: "
+		# rt_data_dict = self.rt_test()
+		# rt_data = rt_data_dict.values()
+		# self.real_time_vote = []	
+		# for i in rt_data:
+		# 	result = self.clf.predict(i)
+		# 	self.real_time_vote.append(result)
+		# like_vote = 0
+		# dislike_vote = 0
+		# for e in self.real_time_vote:
+		# 	if e == 1:
+		# 		like_vote += 1
+		# 	else:
+		# 		dislike_vote += 1
+		# if like_vote > dislike_vote:
+		# 	result = 1
+		# 	print "Predict as like!!!"
+		# elif like_vote < dislike_vote:
+		# 	result = -1
+		# 	print "Predict as dislike!!!"
+		# else:
+		# 	result = 0
+		# 	print "Predict as 'Never Mind'!!!"
+		# print np.array(self.all_features())
+		# print self.test_data
+		# result = clf.predict(self.test_data)
+		# print result
+		# if result == 0:
+		# 	print "predicted as dislike!"
+		# else:
+		# 	print "predicted as like!"
+		# print "predict on test feature 1: "
+		# result1 = clf.predict(self.test_data1)
+		# print result1
+		# if result == 0:
+		# 	print "predicted as dislike!"
+		# else:
+		# 	print "predicted as like!"
+		# return clf
+
+	def rt_test(self):
+		cur_f = self.el.realtime_data()
+		rt_data = cur_f.values()
+		rt_dic = rt_data[0]
+		self.t_features = []
+		rt_list = []
+		chs = []
+		for k, v in rt_dic.iteritems():
+			chs.append(k)
+			rt_list.append(v)
+		# print rt_list
+		print np.shape(rt_list)
+		rt_dic = self.feature_psd(rt_list, chs)
+		# print rt_dic
+		# ['F3_theta', 'T8_gamma', 'F7_gamma', 'FC5_alpha', 'FC5_delta', 'F3_delta', 'T8_theta', 'O2_theta', 'AF3_alpha', 'O1_theta', 'AF3_beta', 'AF3_gamma', 'T8_beta', 'F8_theta', 'F7_beta', 'FC6_gamma', 'F3_beta', 'F7_theta', 'F7_delta', 'O2_beta', 'AF4_delta', 'T8_alpha', 'F4_delta', 'P8_delta', 'O1_alpha', 'P8_gamma', 'FC6_delta', 'O2_delta', 'F8_beta', 'P8_beta', 'T7_delta', 'P7_alpha', 'T7_theta', 'P7_gamma', 'AF4_beta', 'P8_theta', 'F7_alpha', 'O1_beta', 'F3_gamma', 'FC5_theta', 'F4_theta', 'AF4_theta', 'P7_delta', 'FC6_beta', 'T7_gamma', 'F4_beta', 'AF4_alpha', 'F4_gamma', 'O1_gamma', 'AF3_delta', 'FC6_alpha', 'F8_gamma', 'O2_alpha', 'FC6_theta', 'T8_delta', 'F8_delta', 'P7_theta', 'F4_alpha', 'O2_gamma', 'F8_alpha', 'F3_alpha', 'P8_alpha', 'P7_beta', 'AF3_theta', 'O1_delta', 'FC5_beta', 'AF4_gamma', 'T7_beta', 'T7_alpha', 'FC5_gamma']
+		# key_num = 70
+
+		return rt_dic
+		# for k, v in rt_dic.iteritems():
+			
+		# rt_ary = np.array(rt_list)
+		# print rt_ary
+		# print np.shape(rt_ary[0])
+		# print np.shape(rt_ary)
+
+	def rt_test2(self):
+		result = -1
+		cur_f = self.el.realtime_data()
+		rt_data = cur_f.values()
+		rt_dic = rt_data[0]
+		self.t_features = []
+		rt_list = []
+		chs = []
+		count = 0
+		c_like = c_dislike = c_idk = 0
+		for k, v in rt_dic.iteritems():
+			length = len(v)
+			break
+		term = int(math.floor(length/64))
+		for k, v in rt_dic.iteritems():
+			rt_list.append(v.tolist())
+			chs.append(k)
+		rt_use = (np.array(rt_list)).T
+		# print rt_use
+		# print np.shape(rt_use)
+		point = 0
+		for t in range(term - 1):
+			sec_wid = []
+			for i in range(128):
+				sec_wid.append(rt_use[point + i])
+			sec_wid_use = np.array(sec_wid).T
+			# print sec_wid_use
+			sec_wid2 = []
+			for l in sec_wid_use:
+				sec_wid2.append(np.array(l))
+			# print sec_wid2
+			# print "sec_wid2.size=", np.shape(sec_wid2)
+			sec_dic = self.feature_psd(sec_wid2, chs)
+			sec_flat = []
+			sec_list = []
+			for k1, v1 in sec_dic.iteritems():
+				sec_list.append(v1)
+			sec_flat = (np.array(sec_list)).flatten()
+			result = self.clf.predict(sec_flat)
+			if result == 1:
+				c_like += 1
+			else:
+				c_dislike += 1
+			# print sec_dic.keys()
+			# print "key_num\n", len(sec_dic.keys())
+			# for k, v in sec_dic.iteritems():
+			# 	print len(v)
+			# USE SEC_DIC TO DO 1-SECOND BASED MACHINE LEARNING REAL TIME!!!!
+			point += 64
+		if c_like > c_dislike:
+			predict = 1
+			print "Predict as like!!!"
+		elif c_like < c_dislike:
+			predict = -1
+			print "Predict as dislike!!!"
 		else:
-			print "predicted as like!"
-		print "predict on test feature 1: "
-		result1 = clf.predict(self.test_data1)
-		print result1
-		if result == 0:
-			print "predicted as dislike!"
-		else:
-			print "predicted as like!"
-		return clf
+			predict = 0
+			print "Predict as 'Never Mind'!!!"
+		return predict
+		# 	for t in range(term):
+		# 		for i in range(128):
+
+		# 	chs.append(k)
+		# 	rt_list.append(v)
+		# 	count += 1
+
+		# # print rt_list
+		# rt_dic = self.feature_psd(rt_list, chs)
+			
+	def rt_test1(self):
+		test_file = self.el.realtime_data()
+		rt_data = test_file.values()
+		rt_dic = rt_data[0]
+		print "t_dic\n", rt_dic
+		print rt_dic['O1']
+		self.all_feature_test = []
+		test_vote = []
+		for k, v in rt_dic.iteritems():
+			one_video_data = []
+			one_video_ch = []
+			# for tag in self.tag_dic:
+			# 	if tag in k:
+			# 		tag_label = self.tag_dic[tag]
+			# 		# labe - like for 1, other for 0
+			# 		if tag_label ==  0:
+			# 			label = 1
+			# 		else:
+			# 			label = 0
+			for data in v:
+				# one_video_ch.append(ch)
+				one_video_data.append(data)
+				video_terms = int(math.floor(len(data)/64))
+				# print type(data)
+				# print len(data)
+			start = 0
+			# tags = [label]*128
+			# print "video_term: %d" % video_terms
+			for i in range(video_terms):
+				wid_sec = []
+				for one_ch_data in one_video_data: 
+					wid_sec_ch = one_ch_data[start:(start + 128)]
+					wid_sec.append(wid_sec_ch)
+				# print "i = %d" % i
+				start += 64
+				# print np.shape(wid_sec)
+				# print len(tags)
+				if np.shape(wid_sec)[1] == 128:
+					sec_psd_dic = self.feature_psd(wid_sec, one_video_ch)
+					sec_psd_list = []
+					new_sec_dic = {}
+					for k, v in sec_psd_dic.iteritems():
+						new_k = self.feature_dict[k]
+						new_sec_dic[new_k] = v
+					key_list = new_sec_dic.keys()
+					key_list.sort()
+					# if count == 0:
+					for key in key_list:
+						# all_features.append(new_sec_dic[key])
+						sec_psd_list.append(new_sec_dic[key])
+					print "***********************************"
+					print np.shape(sec_psd_list)
+					print "***********************************"
+					self.all_features_test.extend(sec_psd_list)
+		return self.all_features_test
+					# self.test_data = self.all_features[0]
+					# self.tl = 1
+					# self.test_data1 = self.all_features[1]
+					# tags = [label]*70
+					# self.all_tags.extend(tags)
+
 
 	def remove_artifact(self, data):
 		pass
@@ -213,8 +510,8 @@ class LikeRecog(object):
 		# plt.draw()
 		# plt.show()
 		all_samples = np.concatenate((class1_sample, class2_sample), axis=1)
-		print "all_samples"
-		print all_samples
+		# print "all_samples"
+		# print all_samples
 		assert all_samples.shape == (3, 40), "The matrix has not the 3x40"
 		self.pca_dev(all_samples, d)
 
@@ -429,9 +726,9 @@ class LikeRecog(object):
 	def feature_nmf(self, wid):
 		pass
 
-	def alpha_detection(self, data):
+	# def alpha_detection(self, data):
 
-	def beta_detection(self, data):
+	# def beta_detection(self, data):
 
 	def feature_psd(self, wid, ch_name):
 		# print "hiiiiiiiiiiii"
@@ -487,10 +784,11 @@ class LikeRecog(object):
 		# print psd_dic
 		# for k, v in psd_dic.iteritems():
 		# print "@@@@@@@@@@@@@@@@@@@"
-		# print psd_dic.keys()
+		# print psd_dic
 		# print "@@@@@@@@@@@@@@@@@@@"
 		# print check
 		# print "yesyesyes"
+		# print psd_dic
 		return psd_dic
 
 	def fft_train(self):
@@ -524,6 +822,7 @@ class LikeRecog(object):
 if __name__ == "__main__":
 	lr = LikeRecog()
 	lr.run_train()
+	# lr.rt_test2()
 	# lr.pca_util(2)
 	# lr.feature_psd(lr.data)
 	# lr.svm("")
